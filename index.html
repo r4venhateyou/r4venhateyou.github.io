@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Professional audio and video to text conversion with maximum accuracy">
+    <title>Conv. | Audio/Video to Text Conversion</title>
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="style.css" as="style">
+    
+    <!-- Favicons -->
+    <!-- <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>"> -->
+    <link rel="icon" href="/logo.png" type="image/png">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Blur background elements -->
+    <div class="background-blurs">
+        <div class="blur-circle blur-1"></div>
+        <div class="blur-circle blur-2"></div>
+        <div class="blur-circle blur-3"></div>
+        <div class="blur-circle blur-4"></div>
+    </div>
+
+    <!-- Canvas for background animation (hidden) -->
+    <canvas id="backgroundCanvas" aria-hidden="true"></canvas>
+
+    <!-- Enhanced header -->
+    <header class="sticky-header" role="banner">
+        <div class="header-container">
+            <!-- Logo with improved semantics -->
+            <div class="logo" onclick="location.href='/'" role="button" tabindex="0" aria-label="Conv. - Homepage">
+                <span class="logo-text">conv.</span>
+                <span class="logo-badge">AI</span>
+            </div>
+            
+            <!-- Navigation with improved accessibility -->
+            <nav class="header-nav" role="navigation" aria-label="Main navigation">
+                <a class="nav-link active" href="#home" data-target="home">Home</a>
+                <a class="nav-link" href="#features" data-target="features">Features</a>
+                <a class="nav-link" href="/pricing" data-target="pricing">Pricing</a>
+                <a class="nav-link" href="privacy.html" data-target="privacy">Privacy</a>
+                <a class="nav-link" href="/changelogs" data-target="changelogs">Changelogs</a>
+                <div class="nav-indicator" id="navIndicator"></div>
+            </nav>
+            
+            <!-- User actions -->
+            <section class="header-actions" aria-label="User actions">
+                <button onclick="location.href='/dashboard'" class="dashboard-btn" aria-label="Go to dashboard">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M2.168,10.555a1,1,0,0,1,.278-1.387l9-6a1,1,0,0,1,1.11,0l9,6A1,1,0,0,1,21,11H19v9a1,1,0,0,1-1,1H6a1,1,0,0,1-1-1V11H3l.019-.019A.981.981,0,0,1,2.168,10.555Z"></path>
+                    </svg>
+                    <span>Dashboard</span>
+                    <div class="btn-hover-effect" aria-hidden="true"></div>
+                </button>
+            </section>
+        </div>
+    </header>
+
+    <!-- Main content -->
+    <main role="main">
+        <!-- Home Section -->
+        <section id="home">
+            <div class="glass-container">
+                <!-- Header with improved semantics -->
+                <header class="content-header">
+                    <h1 class="gradient-text">Convert Audio & Video to Text</h1>
+                    <p class="subtitle">Accurate speech recognition powered by artificial intelligence</p>
+                </header>
+
+                <!-- File upload section -->
+                <section class="upload-section" aria-labelledby="upload-title">
+                    <h2 id="upload-title" class="visually-hidden">File Upload</h2>
+                    
+                    <div class="upload-area">
+                        <label class="upload-box" for="fileInput" tabindex="0">
+                            <div class="upload-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14,2 14,8 20,8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10,9 9,9 8,9"></polyline>
+                                </svg>
+                            </div>
+                            <span class="upload-text">Drag & drop your file here or click to browse</span>
+                            <span class="upload-formats">Supported formats: MP3, WAV, MP4, AVI, MOV</span>
+                            <input type="file" id="fileInput" accept="audio/*,video/*" aria-describedby="fileFormats">
+                        </label>
+                        
+                        <div class="upload-actions">
+                            <button class="upload-btn primary" id="uploadTrigger">
+                                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17,8 12,3 7,8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                Choose File
+                            </button>
+                            <button class="upload-btn secondary" id="sampleTrigger" type="button">
+                                Try Sample
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Progress indicator -->
+                    <div class="upload-progress" id="uploadProgress" aria-live="polite" aria-atomic="true">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <div class="progress-text" id="progressText">Ready to process your files</div>
+                    </div>
+                </section>
+
+                <!-- Results section -->
+                <section class="results-section" aria-labelledby="results-title">
+                    <h2 id="results-title" class="visually-hidden">Conversion Results</h2>
+                    
+                    <div class="result-box" id="resultBox">
+                        <div class="result-placeholder">
+                            <svg class="result-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14,2 14,8 20,8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10,9 9,9 8,9"></polyline>
+                            </svg>
+                            <p>Your converted text will appear here</p>
+                        </div>
+                    </div>
+
+                    <!-- Results actions -->
+                    <div class="result-actions" id="resultActions">
+                        <button class="action-btn" id="copyBtn" disabled>
+                            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            Copy Text
+                        </button>
+                        <button class="action-btn" id="downloadBtn" disabled>
+                            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7,10 12,15 17,10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Download
+                        </button>
+                        <button class="action-btn" id="clearBtn" disabled>
+                            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                            Clear
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </section>
+
+        <!-- Features section -->
+        <section class="features-section" id="features">
+            <div class="glass-container features-container">
+                <h2 class="features-title">Why Choose Our Service?</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🎯</div>
+                        <h3>High Accuracy</h3>
+                        <p>Advanced AI algorithms ensure up to 95% transcription accuracy</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3>Fast Processing</h3>
+                        <p>Convert 1 hour of audio in under 5 minutes with our optimized infrastructure</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🛡️</div>
+                        <h3>Secure & Private</h3>
+                        <p>Your files are processed securely and deleted automatically after conversion</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔧</div>
+                        <h3>Multiple Formats</h3>
+                        <p>Support for all major audio and video formats with timestamp options</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Enhanced bottom glow -->
+    <div class="bottom-glow" aria-hidden="true"></div>
+
+    <script src="script.js" defer></script>
+</body>
+</html>
