@@ -15,9 +15,21 @@ class AudioVideoToTextConverter {
         
         this.isScrolling = false;
         this.scrollTimeout = null;
-        this.isMobile = this.detectMobile();
+        this.currentPage = this.getCurrentPage();
+        this.previousPage = sessionStorage.getItem('previousPage') || 'home';
+        
+        // Базовый URL для API
+        this.apiBaseUrl = 'http://127.0.0.1:5000'; // Фиксируем порт бекенда
         
         this.init();
+    }
+
+    getCurrentPage() {
+        const path = window.location.pathname;
+        if (path.includes('privacy.html')) return 'privacy';
+        if (path.includes('pricing')) return 'pricing';
+        if (path.includes('changelogs')) return 'changelogs';
+        return 'home';
     }
 
     init() {
@@ -26,36 +38,38 @@ class AudioVideoToTextConverter {
         this.initEnhancedNavigation();
         this.initScrollSpy();
         this.updateUIState('ready');
-        this.optimizeForMobile();
+        
+        // Проверяем доступность бекенда
+        this.checkBackendHealth();
     }
 
-    detectMobile() {
-        return window.innerWidth <= 768 || 
-               /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    }
-
-    optimizeForMobile() {
-        if (this.isMobile) {
-            // Оптимизации для мобильных устройств
-            document.documentElement.style.setProperty('--spacing-lg', '24px');
-            document.documentElement.style.setProperty('--spacing-xl', '32px');
+    async checkBackendHealth() {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/health`, {
+                method: 'GET',
+                mode: 'cors', // Явно указываем режим CORS
+                headers: {
+                    'Accept': 'application/json',
+                }
+            });
             
-            // Улучшаем обработку касаний
-            this.enhanceTouchEvents();
+            if (response.ok) {
+                const health = await response.json();
+                console.log('Backend is healthy:', health);
+                return true;
+            } else {
+                console.warn('Backend health check failed');
+                return false;
+            }
+        } catch (error) {
+            console.warn('Backend is not available:', error.message);
+            // Показываем более информативное сообщение
+            this.showTemporaryMessage(
+                'Cannot connect to backend service. Make sure the Python server is running on port 5000.', 
+                'error'
+            );
+            return false;
         }
-    }
-
-    enhanceTouchEvents() {
-        // Улучшенная обработка касаний для мобильных
-        document.querySelectorAll('button, .nav-link, .upload-box').forEach(element => {
-            element.addEventListener('touchstart', function() {
-                this.style.transform = 'scale(0.98)';
-            }, { passive: true });
-            
-            element.addEventListener('touchend', function() {
-                this.style.transform = '';
-            }, { passive: true });
-        });
     }
 
     setupEventListeners() {
@@ -63,12 +77,10 @@ class AudioVideoToTextConverter {
         this.uploadTrigger.addEventListener('click', () => this.fileInput.click());
         this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
         
-        // Drag and drop (только для десктопа)
-        if (!this.isMobile) {
-            this.uploadBox.addEventListener('dragover', (e) => this.handleDragOver(e));
-            this.uploadBox.addEventListener('dragleave', (e) => this.handleDragLeave(e));
-            this.uploadBox.addEventListener('drop', (e) => this.handleFileDrop(e));
-        }
+        // Drag and drop
+        this.uploadBox.addEventListener('dragover', (e) => this.handleDragOver(e));
+        this.uploadBox.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+        this.uploadBox.addEventListener('drop', (e) => this.handleFileDrop(e));
         
         // Sample file
         this.sampleTrigger.addEventListener('click', () => this.handleSampleFile());
@@ -85,52 +97,59 @@ class AudioVideoToTextConverter {
             }
         });
 
-        // Mobile orientation change
-        window.addEventListener('orientationchange', () => {
-            setTimeout(() => {
-                this.updateNavIndicator();
-            }, 300);
-        });
-
-        // Resize optimization
-        let resizeTimeout;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(() => {
-                this.updateNavIndicator();
-                this.isMobile = this.detectMobile();
-                this.optimizeForMobile();
-            }, 250);
-        });
+        this.setupEnhancedNavigation();
     }
 
-    initEnhancedNavigation() {
-        // Enhanced smooth navigation
+    setupEnhancedNavigation() {
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
-                e.preventDefault();
-                
-                const target = link.getAttribute('href');
-                
-                // Remove active class from all links
-                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-                // Add active class to clicked link
-                link.classList.add('active');
-                
-                // Update indicator with smooth animation
-                this.updateNavIndicator();
-                
-                if (target === '#home') {
-                    this.scrollToHome();
-                } else if (target === '#features') {
-                    this.scrollToFeatures();
-                } else if (target === 'privacy.html') {
-                    window.location.href = 'privacy.html';
+                const href = link.getAttribute('href');
+                const target = link.getAttribute('data-target') || 
+                              (href.includes('#') ? href.substring(1) : 
+                              href.replace('.html', ''));
+
+                if (href.includes('.html') || href === '/pricing' || href === '/changelogs') {
+                    e.preventDefault();
+                    this.navigateToPage(href, target);
+                } else {
+                    e.preventDefault();
+                    this.handleInternalNavigation(target);
                 }
             });
         });
+    }
 
-        // Update indicator on load
+    navigateToPage(url, target) {
+        sessionStorage.setItem('previousPage', this.currentPage);
+        sessionStorage.setItem('navTransition', 'true');
+        document.body.classList.add('page-transition-out');
+        
+        setTimeout(() => {
+            if (url.startsWith('/')) {
+                window.location.href = url;
+            } else {
+                window.location.href = url;
+            }
+        }, 400);
+    }
+
+    handleInternalNavigation(target) {
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        const activeLink = document.querySelector(`.nav-link[data-target="${target}"]`);
+        if (activeLink) {
+            activeLink.classList.add('active');
+        }
+        
+        this.updateNavIndicator();
+        
+        if (target === 'home') {
+            this.scrollToHome();
+        } else if (target === 'features') {
+            this.scrollToFeatures();
+        }
+    }
+
+    initEnhancedNavigation() {
         this.updateNavIndicator();
     }
 
@@ -144,7 +163,7 @@ class AudioVideoToTextConverter {
 
         const options = {
             root: null,
-            rootMargin: this.isMobile ? '-30% 0px -30% 0px' : '-40% 0px -40% 0px',
+            rootMargin: '-40% 0px -40% 0px',
             threshold: 0
         };
 
@@ -177,7 +196,7 @@ class AudioVideoToTextConverter {
     }
 
     handleManualScroll() {
-        const scrollPosition = window.scrollY + (window.innerHeight / (this.isMobile ? 4 : 3));
+        const scrollPosition = window.scrollY + (window.innerHeight / 3);
         
         const homeSection = document.querySelector('#home') || document.querySelector('.gradient-text')?.closest('section');
         const featuresSection = document.getElementById('features');
@@ -220,8 +239,7 @@ class AudioVideoToTextConverter {
         this.isScrolling = true;
         const homeHeader = document.querySelector('.gradient-text');
         if (homeHeader) {
-            const offset = this.isMobile ? 100 : 200;
-            homeHeader.style.scrollMarginTop = offset + 'px';
+            homeHeader.style.scrollMarginTop = '200px';
             homeHeader.scrollIntoView({ 
                 behavior: 'smooth',
                 block: 'start'
@@ -245,8 +263,7 @@ class AudioVideoToTextConverter {
         this.isScrolling = true;
         const featuresSection = document.getElementById('features');
         if (featuresSection) {
-            const offset = this.isMobile ? 80 : 100;
-            featuresSection.style.scrollMarginTop = offset + 'px';
+            featuresSection.style.scrollMarginTop = '100px';
             featuresSection.scrollIntoView({ 
                 behavior: 'smooth',
                 block: 'start'
@@ -263,20 +280,15 @@ class AudioVideoToTextConverter {
         const navIndicator = document.getElementById('navIndicator');
         
         if (activeLink && navIndicator) {
-            // Добавляем небольшую задержку для стабильности на мобильных
-            setTimeout(() => {
-                const linkRect = activeLink.getBoundingClientRect();
-                const navRect = activeLink.parentElement.getBoundingClientRect();
-                
-                navIndicator.style.width = `${linkRect.width}px`;
-                navIndicator.style.left = `${linkRect.left - navRect.left}px`;
-            }, this.isMobile ? 50 : 0);
+            const linkRect = activeLink.getBoundingClientRect();
+            const navRect = activeLink.parentElement.getBoundingClientRect();
+            
+            navIndicator.style.width = `${linkRect.width}px`;
+            navIndicator.style.left = `${linkRect.left - navRect.left}px`;
         }
     }
 
     initBackgroundAnimation() {
-        if (this.isMobile) return; // Отключаем сложную анимацию на мобильных
-        
         const resizeCanvas = () => {
             this.canvas.width = window.innerWidth;
             this.canvas.height = window.innerHeight;
@@ -289,21 +301,18 @@ class AudioVideoToTextConverter {
     }
 
     handleDragOver(e) {
-        if (this.isMobile) return;
         e.preventDefault();
         this.uploadBox.classList.add('drag-over');
         this.uploadBox.style.borderColor = 'var(--accent-primary)';
     }
 
     handleDragLeave(e) {
-        if (this.isMobile) return;
         e.preventDefault();
         this.uploadBox.classList.remove('drag-over');
         this.uploadBox.style.borderColor = '';
     }
 
     handleFileDrop(e) {
-        if (this.isMobile) return;
         e.preventDefault();
         this.uploadBox.classList.remove('drag-over');
         this.uploadBox.style.borderColor = '';
@@ -325,14 +334,50 @@ class AudioVideoToTextConverter {
         this.updateUIState('processing');
         this.showProgress(30, 'Loading sample file...');
         
-        await this.delay(this.isMobile ? 1000 : 1500);
-        
-        this.showProgress(70, 'Transcribing sample audio...');
-        await this.delay(this.isMobile ? 1500 : 2000);
-        
-        this.showProgress(100, 'Transcription complete!');
-        
-        const sampleText = `SAMPLE TRANSCRIPTION - This is a demonstration of how your audio would be converted to text.
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/sample`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            this.showProgress(100, 'Transcription complete!');
+            
+            // Форматируем результат
+            let formattedText = result.text || 'No text recognized';
+            if (result.duration) {
+                formattedText = `DURATION: ${this.formatDuration(result.duration)}\n\n${formattedText}`;
+            }
+            if (result.language && result.language !== 'unknown') {
+                formattedText = `LANGUAGE: ${result.language.toUpperCase()}\n${formattedText}`;
+            }
+            if (result.is_sample) {
+                formattedText = `🔹 SAMPLE TRANSCRIPTION 🔹\n\n${formattedText}`;
+            }
+            
+            this.displayResult(formattedText);
+            this.updateUIState('completed');
+            
+        } catch (error) {
+            console.error('Error loading sample:', error);
+            // Fallback to local sample
+            this.showProgress(70, 'Transcribing sample audio...');
+            await this.delay(1000);
+            
+            this.showProgress(100, 'Transcription complete!');
+            
+            const sampleText = `🔹 SAMPLE TRANSCRIPTION 🔹
+
+DURATION: 00:00:45
+LANGUAGE: EN
 
 [00:00:00] Welcome to our audio transcription service. This sample demonstrates the high-quality text conversion.
 
@@ -340,19 +385,14 @@ class AudioVideoToTextConverter {
 
 [00:00:30] The system automatically detects speaker changes and adds proper punctuation.`;
 
-        this.displayResult(sampleText);
-        this.updateUIState('completed');
+            this.displayResult(sampleText);
+            this.updateUIState('completed');
+        }
     }
 
-    async processFile(file) {
+    async processFile(file, language = 'auto') {
         if (!this.isValidFileType(file)) {
-            this.showError('Please select a valid audio or video file (MP3, WAV, MP4, AVI, MOV)');
-            return;
-        }
-
-        // Mobile-specific file size check
-        if (this.isMobile && file.size > 100 * 1024 * 1024) { // 100MB limit for mobile
-            this.showError('File too large for mobile processing. Please use a smaller file or switch to desktop.');
+            this.showError('Please select a valid audio or video file (MP3, WAV, MP4, AVI, MOV, M4A, FLAC, AAC, MKV, WMV)');
             return;
         }
 
@@ -360,57 +400,69 @@ class AudioVideoToTextConverter {
         this.showProgress(10, 'Uploading file...');
 
         try {
-            await this.simulateFileUpload(file);
-            this.showProgress(40, 'Analyzing audio content...');
-            await this.delay(this.isMobile ? 1000 : 1500);
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('language', language);
             
-            this.showProgress(70, 'Transcribing speech...');
-            await this.delay(this.isMobile ? 2000 : 2500);
+            this.showProgress(30, 'Processing file...');
             
-            this.showProgress(90, 'Finalizing transcription...');
-            await this.delay(this.isMobile ? 800 : 1000);
+            const response = await fetch(`${this.apiBaseUrl}/transcribe`, {
+                method: 'POST',
+                body: formData
+                // Заголовки не нужны для FormData, браузер установит их автоматически
+            });
+
+            if (!response.ok) {
+                let errorMessage = `Server error: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.error || errorMessage;
+                } catch (e) {
+                    // Если не удалось распарсить JSON, пробуем получить текст
+                    const errorText = await response.text();
+                    errorMessage = errorText || errorMessage;
+                }
+                throw new Error(errorMessage);
+            }
+
+            const result = await response.json();
             
             this.showProgress(100, 'Transcription complete!');
             
-            const transcribedText = this.generateMockTranscription(file.name);
-            this.displayResult(transcribedText);
+            // Форматируем результат
+            let formattedText = result.text || 'No text recognized';
+            if (result.duration) {
+                formattedText = `DURATION: ${this.formatDuration(result.duration)}\n\n${formattedText}`;
+            }
+            if (result.language && result.language !== 'unknown') {
+                formattedText = `LANGUAGE: ${result.language.toUpperCase()}\n${formattedText}`;
+            }
+            
+            this.displayResult(formattedText);
             this.updateUIState('completed');
             
         } catch (error) {
+            console.error('Error processing file:', error);
             this.showError('Error processing file: ' + error.message);
+            this.updateUIState('ready');
         }
+    }
+
+    formatDuration(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
     isValidFileType(file) {
         const validTypes = [
             'audio/mpeg', 'audio/wav', 'audio/x-wav', 'audio/mp4', 'audio/x-m4a',
-            'video/mp4', 'video/avi', 'video/quicktime', 'video/x-msvideo'
+            'audio/flac', 'audio/aac', 'video/mp4', 'video/avi', 'video/quicktime', 
+            'video/x-msvideo', 'video/x-matroska', 'video/x-ms-wmv'
         ];
-        return validTypes.includes(file.type) || 
-               file.name.match(/\.(mp3|wav|mp4|avi|mov|m4a)$/i);
-    }
-
-    async simulateFileUpload(file) {
-        const steps = this.isMobile ? 4 : 5;
-        const delayTime = this.isMobile ? 150 : 100;
-        
-        for (let progress = 10; progress <= 30; progress += steps) {
-            this.showProgress(progress, `Uploading... ${progress}%`);
-            await this.delay(delayTime);
-        }
-        await this.delay(this.isMobile ? 800 : 1000);
-    }
-
-    generateMockTranscription(filename) {
-        return `TRANSCRIPTION RESULTS - ${filename}
-
-Processed: ${new Date().toLocaleTimeString()}
-Duration: 00:02:34
-Confidence: 94.7%
-
-[00:00:00] This is a mock transcription of your audio file.
-
-[00:00:15] The transcription service uses advanced AI algorithms.`;
+        const validExtensions = /\.(mp3|wav|mp4|avi|mov|m4a|flac|aac|mkv|wmv)$/i;
+        return validTypes.includes(file.type) || validExtensions.test(file.name);
     }
 
     displayResult(text) {
@@ -420,9 +472,15 @@ Confidence: 94.7%
                     <h3>Transcription Result</h3>
                     <span class="result-meta">${new Date().toLocaleString()}</span>
                 </div>
-                <div class="result-text">${text}</div>
+                <div class="result-text">${this.escapeHtml(text)}</div>
             </div>
         `;
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     async copyToClipboard() {
@@ -437,15 +495,17 @@ Confidence: 94.7%
 
     downloadResult() {
         const text = this.resultBox.innerText;
-        const blob = new Blob([text], { type: 'text/plain' });
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `transcription-${new Date().getTime()}.txt`;
+        a.download = `transcription-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        
+        this.showTemporaryMessage('Download started!', 'success');
     }
 
     clearResults() {
@@ -463,21 +523,26 @@ Confidence: 94.7%
         `;
         this.updateUIState('ready');
         this.fileInput.value = '';
+        this.showProgress(0, 'Ready to process your files');
     }
 
     updateUIState(state) {
-        const states = {
-            ready: { progress: 0, copy: true, download: true, clear: true },
-            processing: { progress: false, copy: true, download: true, clear: true },
-            completed: { progress: false, copy: false, download: false, clear: false }
-        };
+        // Обновляем состояние кнопок
+        if (state === 'ready') {
+            this.copyBtn.disabled = true;
+            this.downloadBtn.disabled = true;
+            this.clearBtn.disabled = true;
+        } else if (state === 'processing') {
+            this.copyBtn.disabled = true;
+            this.downloadBtn.disabled = true;
+            this.clearBtn.disabled = true;
+        } else if (state === 'completed') {
+            this.copyBtn.disabled = false;
+            this.downloadBtn.disabled = false;
+            this.clearBtn.disabled = false;
+        }
 
-        const currentState = states[state];
-        
-        this.copyBtn.disabled = currentState.copy;
-        this.downloadBtn.disabled = currentState.download;
-        this.clearBtn.disabled = currentState.clear;
-
+        // Обновляем прогресс
         if (state === 'ready') {
             this.showProgress(0, 'Ready to process your files');
         }
@@ -486,6 +551,13 @@ Confidence: 94.7%
     showProgress(percent, text) {
         this.progressFill.style.width = `${percent}%`;
         this.progressText.textContent = text;
+        
+        // Анимация прогресса
+        if (percent === 100) {
+            this.progressFill.style.transition = 'width 0.5s ease';
+        } else {
+            this.progressFill.style.transition = 'width 0.3s ease';
+        }
     }
 
     showError(message) {
@@ -496,28 +568,97 @@ Confidence: 94.7%
     showTemporaryMessage(message, type = 'info') {
         const messageEl = document.createElement('div');
         messageEl.textContent = message;
+        messageEl.className = 'temp-message';
         messageEl.style.cssText = `
             position: fixed;
-            top: ${this.isMobile ? '80px' : '100px'};
+            top: 120px;
             right: 20px;
-            left: ${this.isMobile ? '20px' : 'auto'};
-            background: ${type === 'error' ? 'var(--error)' : 'var(--success)'};
+            background: ${type === 'error' ? 'var(--error)' : 
+                         type === 'success' ? 'var(--success)' : 
+                         type === 'warning' ? 'var(--warning)' : 'var(--accent-primary)'};
             color: white;
             padding: 12px 20px;
             border-radius: 8px;
-            z-index: 1000;
-            font-size: ${this.isMobile ? '14px' : '16px'};
-            text-align: ${this.isMobile ? 'center' : 'left'};
-            max-width: ${this.isMobile ? 'calc(100vw - 40px)' : '400px'};
+            z-index: 10000;
+            font-family: var(--font-primary);
+            font-weight: 500;
+            box-shadow: var(--shadow-lg);
+            animation: slideInRight 0.3s ease, slideOutRight 0.3s ease 2.7s;
+            max-width: 300px;
+            word-wrap: break-word;
         `;
+        
         document.body.appendChild(messageEl);
-        setTimeout(() => messageEl.remove(), 3000);
+        setTimeout(() => {
+            if (messageEl.parentElement) {
+                messageEl.remove();
+            }
+        }, 3000);
     }
 
     delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 }
+
+// Добавляем CSS анимации для сообщений
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
+    .result-content {
+        text-align: left;
+    }
+    
+    .result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--glass-border);
+    }
+    
+    .result-header h3 {
+        margin: 0;
+        color: var(--text-primary);
+        font-size: 1.2rem;
+    }
+    
+    .result-meta {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+    
+    .result-text {
+        white-space: pre-wrap;
+        line-height: 1.6;
+        color: var(--text-primary);
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+    }
+`;
+document.head.appendChild(style);
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
