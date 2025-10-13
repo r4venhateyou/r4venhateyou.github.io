@@ -15,21 +15,9 @@ class AudioVideoToTextConverter {
         
         this.isScrolling = false;
         this.scrollTimeout = null;
-        this.currentPage = this.getCurrentPage();
-        this.previousPage = sessionStorage.getItem('previousPage') || 'home';
-        
-        // Базовый URL для API - используем тот же порт что и фронтенд или 5000 для бекенда
-        this.apiBaseUrl = window.location.hostname === '127.0.0.1' ? 'http://127.0.0.1:5000' : 'http://localhost:5000';
+        this.isMobile = this.detectMobile();
         
         this.init();
-    }
-
-    getCurrentPage() {
-        const path = window.location.pathname;
-        if (path.includes('privacy.html')) return 'privacy';
-        if (path.includes('pricing')) return 'pricing';
-        if (path.includes('changelogs')) return 'changelogs';
-        return 'home';
     }
 
     init() {
@@ -38,23 +26,36 @@ class AudioVideoToTextConverter {
         this.initEnhancedNavigation();
         this.initScrollSpy();
         this.updateUIState('ready');
-        
-        // Проверяем доступность бекенда
-        this.checkBackendHealth();
+        this.optimizeForMobile();
     }
 
-    async checkBackendHealth() {
-        try {
-            const response = await fetch(`${this.apiBaseUrl}/health`);
-            if (response.ok) {
-                console.log('Backend is healthy');
-            } else {
-                console.warn('Backend health check failed');
-            }
-        } catch (error) {
-            console.warn('Backend is not available, using fallback mode');
-            // Можно показать предупреждение пользователю
+    detectMobile() {
+        return window.innerWidth <= 768 || 
+               /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
+    optimizeForMobile() {
+        if (this.isMobile) {
+            // Оптимизации для мобильных устройств
+            document.documentElement.style.setProperty('--spacing-lg', '24px');
+            document.documentElement.style.setProperty('--spacing-xl', '32px');
+            
+            // Улучшаем обработку касаний
+            this.enhanceTouchEvents();
         }
+    }
+
+    enhanceTouchEvents() {
+        // Улучшенная обработка касаний для мобильных
+        document.querySelectorAll('button, .nav-link, .upload-box').forEach(element => {
+            element.addEventListener('touchstart', function() {
+                this.style.transform = 'scale(0.98)';
+            }, { passive: true });
+            
+            element.addEventListener('touchend', function() {
+                this.style.transform = '';
+            }, { passive: true });
+        });
     }
 
     setupEventListeners() {
@@ -62,10 +63,12 @@ class AudioVideoToTextConverter {
         this.uploadTrigger.addEventListener('click', () => this.fileInput.click());
         this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
         
-        // Drag and drop
-        this.uploadBox.addEventListener('dragover', (e) => this.handleDragOver(e));
-        this.uploadBox.addEventListener('dragleave', (e) => this.handleDragLeave(e));
-        this.uploadBox.addEventListener('drop', (e) => this.handleFileDrop(e));
+        // Drag and drop (только для десктопа)
+        if (!this.isMobile) {
+            this.uploadBox.addEventListener('dragover', (e) => this.handleDragOver(e));
+            this.uploadBox.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+            this.uploadBox.addEventListener('drop', (e) => this.handleFileDrop(e));
+        }
         
         // Sample file
         this.sampleTrigger.addEventListener('click', () => this.handleSampleFile());
@@ -82,59 +85,52 @@ class AudioVideoToTextConverter {
             }
         });
 
-        this.setupEnhancedNavigation();
-    }
+        // Mobile orientation change
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                this.updateNavIndicator();
+            }, 300);
+        });
 
-    setupEnhancedNavigation() {
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                const href = link.getAttribute('href');
-                const target = link.getAttribute('data-target') || 
-                              (href.includes('#') ? href.substring(1) : 
-                              href.replace('.html', ''));
-
-                if (href.includes('.html') || href === '/pricing' || href === '/changelogs') {
-                    e.preventDefault();
-                    this.navigateToPage(href, target);
-                } else {
-                    e.preventDefault();
-                    this.handleInternalNavigation(target);
-                }
-            });
+        // Resize optimization
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                this.updateNavIndicator();
+                this.isMobile = this.detectMobile();
+                this.optimizeForMobile();
+            }, 250);
         });
     }
 
-    navigateToPage(url, target) {
-        sessionStorage.setItem('previousPage', this.currentPage);
-        sessionStorage.setItem('navTransition', 'true');
-        document.body.classList.add('page-transition-out');
-        
-        setTimeout(() => {
-            if (url.startsWith('/')) {
-                window.location.href = url;
-            } else {
-                window.location.href = url;
-            }
-        }, 400);
-    }
-
-    handleInternalNavigation(target) {
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        const activeLink = document.querySelector(`.nav-link[data-target="${target}"]`);
-        if (activeLink) {
-            activeLink.classList.add('active');
-        }
-        
-        this.updateNavIndicator();
-        
-        if (target === 'home') {
-            this.scrollToHome();
-        } else if (target === 'features') {
-            this.scrollToFeatures();
-        }
-    }
-
     initEnhancedNavigation() {
+        // Enhanced smooth navigation
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                const target = link.getAttribute('href');
+                
+                // Remove active class from all links
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                // Add active class to clicked link
+                link.classList.add('active');
+                
+                // Update indicator with smooth animation
+                this.updateNavIndicator();
+                
+                if (target === '#home') {
+                    this.scrollToHome();
+                } else if (target === '#features') {
+                    this.scrollToFeatures();
+                } else if (target === 'privacy.html') {
+                    window.location.href = 'privacy.html';
+                }
+            });
+        });
+
+        // Update indicator on load
         this.updateNavIndicator();
     }
 
@@ -148,7 +144,7 @@ class AudioVideoToTextConverter {
 
         const options = {
             root: null,
-            rootMargin: '-40% 0px -40% 0px',
+            rootMargin: this.isMobile ? '-30% 0px -30% 0px' : '-40% 0px -40% 0px',
             threshold: 0
         };
 
@@ -181,7 +177,7 @@ class AudioVideoToTextConverter {
     }
 
     handleManualScroll() {
-        const scrollPosition = window.scrollY + (window.innerHeight / 3);
+        const scrollPosition = window.scrollY + (window.innerHeight / (this.isMobile ? 4 : 3));
         
         const homeSection = document.querySelector('#home') || document.querySelector('.gradient-text')?.closest('section');
         const featuresSection = document.getElementById('features');
@@ -224,7 +220,8 @@ class AudioVideoToTextConverter {
         this.isScrolling = true;
         const homeHeader = document.querySelector('.gradient-text');
         if (homeHeader) {
-            homeHeader.style.scrollMarginTop = '200px';
+            const offset = this.isMobile ? 100 : 200;
+            homeHeader.style.scrollMarginTop = offset + 'px';
             homeHeader.scrollIntoView({ 
                 behavior: 'smooth',
                 block: 'start'
@@ -248,7 +245,8 @@ class AudioVideoToTextConverter {
         this.isScrolling = true;
         const featuresSection = document.getElementById('features');
         if (featuresSection) {
-            featuresSection.style.scrollMarginTop = '100px';
+            const offset = this.isMobile ? 80 : 100;
+            featuresSection.style.scrollMarginTop = offset + 'px';
             featuresSection.scrollIntoView({ 
                 behavior: 'smooth',
                 block: 'start'
@@ -265,15 +263,20 @@ class AudioVideoToTextConverter {
         const navIndicator = document.getElementById('navIndicator');
         
         if (activeLink && navIndicator) {
-            const linkRect = activeLink.getBoundingClientRect();
-            const navRect = activeLink.parentElement.getBoundingClientRect();
-            
-            navIndicator.style.width = `${linkRect.width}px`;
-            navIndicator.style.left = `${linkRect.left - navRect.left}px`;
+            // Добавляем небольшую задержку для стабильности на мобильных
+            setTimeout(() => {
+                const linkRect = activeLink.getBoundingClientRect();
+                const navRect = activeLink.parentElement.getBoundingClientRect();
+                
+                navIndicator.style.width = `${linkRect.width}px`;
+                navIndicator.style.left = `${linkRect.left - navRect.left}px`;
+            }, this.isMobile ? 50 : 0);
         }
     }
 
     initBackgroundAnimation() {
+        if (this.isMobile) return; // Отключаем сложную анимацию на мобильных
+        
         const resizeCanvas = () => {
             this.canvas.width = window.innerWidth;
             this.canvas.height = window.innerHeight;
@@ -286,18 +289,21 @@ class AudioVideoToTextConverter {
     }
 
     handleDragOver(e) {
+        if (this.isMobile) return;
         e.preventDefault();
         this.uploadBox.classList.add('drag-over');
         this.uploadBox.style.borderColor = 'var(--accent-primary)';
     }
 
     handleDragLeave(e) {
+        if (this.isMobile) return;
         e.preventDefault();
         this.uploadBox.classList.remove('drag-over');
         this.uploadBox.style.borderColor = '';
     }
 
     handleFileDrop(e) {
+        if (this.isMobile) return;
         e.preventDefault();
         this.uploadBox.classList.remove('drag-over');
         this.uploadBox.style.borderColor = '';
@@ -319,10 +325,10 @@ class AudioVideoToTextConverter {
         this.updateUIState('processing');
         this.showProgress(30, 'Loading sample file...');
         
-        await this.delay(1500);
+        await this.delay(this.isMobile ? 1000 : 1500);
         
         this.showProgress(70, 'Transcribing sample audio...');
-        await this.delay(2000);
+        await this.delay(this.isMobile ? 1500 : 2000);
         
         this.showProgress(100, 'Transcription complete!');
         
@@ -344,60 +350,35 @@ class AudioVideoToTextConverter {
             return;
         }
 
+        // Mobile-specific file size check
+        if (this.isMobile && file.size > 100 * 1024 * 1024) { // 100MB limit for mobile
+            this.showError('File too large for mobile processing. Please use a smaller file or switch to desktop.');
+            return;
+        }
+
         this.updateUIState('processing');
         this.showProgress(10, 'Uploading file...');
 
         try {
-            const formData = new FormData();
-            formData.append('file', file);
+            await this.simulateFileUpload(file);
+            this.showProgress(40, 'Analyzing audio content...');
+            await this.delay(this.isMobile ? 1000 : 1500);
             
-            this.showProgress(30, 'Processing audio...');
+            this.showProgress(70, 'Transcribing speech...');
+            await this.delay(this.isMobile ? 2000 : 2500);
             
-            const response = await fetch(`${this.apiBaseUrl}/transcribe`, {
-                method: 'POST',
-                body: formData,
-                mode: 'cors' // Явно указываем режим CORS
-            });
-
-            if (!response.ok) {
-                let errorMessage = `Server error: ${response.status}`;
-                try {
-                    const errorData = await response.json();
-                    errorMessage = errorData.error || errorMessage;
-                } catch (e) {
-                    // Если не удалось распарсить JSON, используем стандартное сообщение
-                }
-                throw new Error(errorMessage);
-            }
-
-            const result = await response.json();
+            this.showProgress(90, 'Finalizing transcription...');
+            await this.delay(this.isMobile ? 800 : 1000);
             
             this.showProgress(100, 'Transcription complete!');
             
-            // Форматируем результат
-            let formattedText = result.text;
-            if (result.duration) {
-                formattedText = `DURATION: ${this.formatDuration(result.duration)}\n\n${formattedText}`;
-            }
-            if (result.language && result.language !== 'unknown') {
-                formattedText = `LANGUAGE: ${result.language.toUpperCase()}\n${formattedText}`;
-            }
-            
-            this.displayResult(formattedText);
+            const transcribedText = this.generateMockTranscription(file.name);
+            this.displayResult(transcribedText);
             this.updateUIState('completed');
             
         } catch (error) {
-            console.error('Error processing file:', error);
             this.showError('Error processing file: ' + error.message);
-            this.updateUIState('ready');
         }
-    }
-
-    formatDuration(seconds) {
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
     isValidFileType(file) {
@@ -407,6 +388,29 @@ class AudioVideoToTextConverter {
         ];
         return validTypes.includes(file.type) || 
                file.name.match(/\.(mp3|wav|mp4|avi|mov|m4a)$/i);
+    }
+
+    async simulateFileUpload(file) {
+        const steps = this.isMobile ? 4 : 5;
+        const delayTime = this.isMobile ? 150 : 100;
+        
+        for (let progress = 10; progress <= 30; progress += steps) {
+            this.showProgress(progress, `Uploading... ${progress}%`);
+            await this.delay(delayTime);
+        }
+        await this.delay(this.isMobile ? 800 : 1000);
+    }
+
+    generateMockTranscription(filename) {
+        return `TRANSCRIPTION RESULTS - ${filename}
+
+Processed: ${new Date().toLocaleTimeString()}
+Duration: 00:02:34
+Confidence: 94.7%
+
+[00:00:00] This is a mock transcription of your audio file.
+
+[00:00:15] The transcription service uses advanced AI algorithms.`;
     }
 
     displayResult(text) {
@@ -463,9 +467,9 @@ class AudioVideoToTextConverter {
 
     updateUIState(state) {
         const states = {
-            ready: { copy: true, download: true, clear: true },
-            processing: { copy: true, download: true, clear: true },
-            completed: { copy: false, download: false, clear: false }
+            ready: { progress: 0, copy: true, download: true, clear: true },
+            processing: { progress: false, copy: true, download: true, clear: true },
+            completed: { progress: false, copy: false, download: false, clear: false }
         };
 
         const currentState = states[state];
@@ -494,14 +498,17 @@ class AudioVideoToTextConverter {
         messageEl.textContent = message;
         messageEl.style.cssText = `
             position: fixed;
-            top: 100px;
+            top: ${this.isMobile ? '80px' : '100px'};
             right: 20px;
+            left: ${this.isMobile ? '20px' : 'auto'};
             background: ${type === 'error' ? 'var(--error)' : 'var(--success)'};
             color: white;
             padding: 12px 20px;
             border-radius: 8px;
             z-index: 1000;
-            font-family: var(--font-primary);
+            font-size: ${this.isMobile ? '14px' : '16px'};
+            text-align: ${this.isMobile ? 'center' : 'left'};
+            max-width: ${this.isMobile ? 'calc(100vw - 40px)' : '400px'};
         `;
         document.body.appendChild(messageEl);
         setTimeout(() => messageEl.remove(), 3000);
