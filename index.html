@@ -1,201 +1,288 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Professional audio and video to text conversion with maximum accuracy">
-    <title>Conv. | Audio/Video to Text Conversion</title>
-    
-    <!-- Preload critical resources -->
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="preload" href="style.css" as="style">
-    
-    <!-- Favicons -->
-    <!-- <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>"> -->
-    <link rel="icon" href="img/logo.png" type="image/png">
-
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Технології майбутнього</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- Blur background elements -->
-    <div class="background-blurs">
-        <div class="blur-circle blur-1"></div>
-        <div class="blur-circle blur-2"></div>
-        <div class="blur-circle blur-3"></div>
-        <div class="blur-circle blur-4"></div>
+  <!-- Премиальный фон -->
+  <div class="luxury-bg">
+    <div class="bg-gradient"></div>
+    <div class="floating-elements">
+      <div class="floating-element el-1"></div>
+      <div class="floating-element el-2"></div>
+      <div class="floating-element el-3"></div>
     </div>
+  </div>
 
-    <!-- Canvas for background animation (hidden) -->
-    <canvas id="backgroundCanvas" aria-hidden="true"></canvas>
-
-    <!-- Enhanced header -->
-    <header class="sticky-header" role="banner">
-        <div class="header-container">
-            <!-- Logo with improved semantics -->
-            <div class="logo" onclick="location.href='/'" role="button" tabindex="0" aria-label="Conv. - Homepage">
-                <span class="logo-text">conv.</span>
-                <span class="logo-badge">AI</span>
-            </div>
-            
-            <!-- Navigation with improved accessibility -->
-            <nav class="header-nav" role="navigation" aria-label="Main navigation">
-                <a class="nav-link active" href="#home" data-target="home">Home</a>
-                <a class="nav-link" href="#features" data-target="features">Features</a>
-                <a class="nav-link" href="/pricing" data-target="pricing">Pricing</a>
-                <a class="nav-link" href="privacy.html" data-target="privacy">Privacy</a>
-                <a class="nav-link" href="/changelogs" data-target="changelogs">Changelogs</a>
-                <div class="nav-indicator" id="navIndicator"></div>
-            </nav>
-            
-            <!-- User actions -->
-            <section class="header-actions" aria-label="User actions">
-                <button onclick="location.href='/dashboard'" class="dashboard-btn" aria-label="Go to dashboard">
-                    <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                        <path d="M2.168,10.555a1,1,0,0,1,.278-1.387l9-6a1,1,0,0,1,1.11,0l9,6A1,1,0,0,1,21,11H19v9a1,1,0,0,1-1,1H6a1,1,0,0,1-1-1V11H3l.019-.019A.981.981,0,0,1,2.168,10.555Z"></path>
-                    </svg>
-                    <span>Dashboard</span>
-                    <div class="btn-hover-effect" aria-hidden="true"></div>
-                </button>
-            </section>
+  <!-- Главный контент -->
+  <div class="content-wrapper">
+    <header class="luxury-header">
+      <nav class="nav-container">
+        <div class="nav-brand">
+          <div class="brand-logo">
+            <div class="logo-icon">⟁</div>
+          </div>
+          <span class="brand-text">Технології майбутнього</span>
         </div>
+        
+        <div class="nav-links">
+          <a href="#ai" class="nav-link">
+            <span class="link-number">01</span>
+            <span class="link-text">ШІ</span>
+          </a>
+          <a href="#holo" class="nav-link">
+            <span class="link-number">02</span>
+            <span class="link-text">Голографія</span>
+          </a>
+          <a href="#bio" class="nav-link">
+            <span class="link-number">03</span>
+            <span class="link-text">Біокомп'ютери</span>
+          </a>
+        </div>
+
+        <div class="nav-actions">
+          <button class="theme-toggle" id="themeToggle">
+            <i class="fas fa-moon"></i>
+          </button>
+        </div>
+      </nav>
     </header>
 
-    <!-- Main content -->
-    <main role="main">
-        <!-- Home Section -->
-        <section id="home">
-            <div class="glass-container">
-                <!-- Header with improved semantics -->
-                <header class="content-header">
-                    <h1 class="gradient-text">Convert Audio & Video to Text</h1>
-                    <p class="subtitle">Accurate speech recognition powered by artificial intelligence</p>
-                </header>
-
-                <!-- File upload section -->
-                <section class="upload-section" aria-labelledby="upload-title">
-                    <h2 id="upload-title" class="visually-hidden">File Upload</h2>
-                    
-                    <div class="upload-area">
-                        <label class="upload-box" for="fileInput" tabindex="0">
-                            <div class="upload-icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                    <polyline points="14,2 14,8 20,8"></polyline>
-                                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                                    <polyline points="10,9 9,9 8,9"></polyline>
-                                </svg>
-                            </div>
-                            <span class="upload-text">Drag & drop your file here or click to browse</span>
-                            <span class="upload-formats">Supported formats: MP3, WAV, MP4, AVI, MOV</span>
-                            <input type="file" id="fileInput" accept="audio/*,video/*" aria-describedby="fileFormats">
-                        </label>
-                        
-                        <div class="upload-actions">
-                            <button class="upload-btn primary" id="uploadTrigger">
-                                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="17,8 12,3 7,8"></polyline>
-                                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                                </svg>
-                                Choose File
-                            </button>
-                            <button class="upload-btn secondary" id="sampleTrigger" type="button">
-                                Try Sample
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Progress indicator -->
-                    <div class="upload-progress" id="uploadProgress" aria-live="polite" aria-atomic="true">
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="progressFill"></div>
-                        </div>
-                        <div class="progress-text" id="progressText">Ready to process your files</div>
-                    </div>
-                </section>
-
-                <!-- Results section -->
-                <section class="results-section" aria-labelledby="results-title">
-                    <h2 id="results-title" class="visually-hidden">Conversion Results</h2>
-                    
-                    <div class="result-box" id="resultBox">
-                        <div class="result-placeholder">
-                            <svg class="result-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14,2 14,8 20,8"></polyline>
-                                <line x1="16" y1="13" x2="8" y2="13"></line>
-                                <line x1="16" y1="17" x2="8" y2="17"></line>
-                                <polyline points="10,9 9,9 8,9"></polyline>
-                            </svg>
-                            <p>Your converted text will appear here</p>
-                        </div>
-                    </div>
-
-                    <!-- Results actions -->
-                    <div class="result-actions" id="resultActions">
-                        <button class="action-btn" id="copyBtn" disabled>
-                            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                            </svg>
-                            Copy Text
-                        </button>
-                        <button class="action-btn" id="downloadBtn" disabled>
-                            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7,10 12,15 17,10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                            Download
-                        </button>
-                        <button class="action-btn" id="clearBtn" disabled>
-                            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                            Clear
-                        </button>
-                    </div>
-                </section>
+    <main>
+      <!-- Герой секция -->
+      <section class="luxury-hero">
+        <div class="hero-content">
+          <div class="hero-badge">
+            <span>Технології майбутнього</span>
+            <div class="badge-line"></div>
+          </div>
+          
+          <h1 class="hero-title">
+            <span class="title-line">Computers</span>
+            <span class="title-line accent">Worlds</span>
+          </h1>
+          
+          <p class="hero-description">
+            Досліджуйте революційні технології, що формують наступну еру 
+            людства. Від штучного інтелекту до біокомп'ютерів — ми будуємо 
+            майбутнє разом.
+          </p>
+        </div>
+        
+        <div class="hero-visual">
+          <div class="visual-container">
+            <div class="floating-card card-1">
+              <i class="fas fa-brain"></i>
             </div>
+            <div class="floating-card card-2">
+              <i class="fas fa-projector"></i>
+            </div>
+            <div class="floating-card card-3">
+              <i class="fas fa-dna"></i>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Основной контент -->
+      <div class="main-container">
+        <!-- Интро -->
+        <section class="luxury-intro">
+          <div class="intro-content">
+            <p class="intro-text">
+              <span class="text-highlight">Комп'ютери майбутнього</span> відкривають нові горизонти у світі технологій.  
+              Вони мислять, вчаться і навіть взаємодіють із природою.  
+              <br><br>
+              <span class="text-highlight">Штучний інтелект</span>, <span class="text-highlight">голографічні інтерфейси</span> та <span class="text-highlight">біокомп'ютери</span> — це ключові напрями, які формують нову епоху людства.  
+              Ці технології вже сьогодні змінюють науку, медицину, освіту і наше повсякденне життя.
+            </p>
+          </div>
         </section>
 
-        <!-- Features section -->
-        <section class="features-section" id="features">
-            <div class="glass-container features-container">
-                <h2 class="features-title">Why Choose Our Service?</h2>
-                <div class="features-grid">
-                    <div class="feature-card">
-                        <div class="feature-icon">🎯</div>
-                        <h3>High Accuracy</h3>
-                        <p>Advanced AI algorithms ensure up to 95% transcription accuracy</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">⚡</div>
-                        <h3>Fast Processing</h3>
-                        <p>Convert 1 hour of audio in under 5 minutes with our optimized infrastructure</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">🛡️</div>
-                        <h3>Secure & Private</h3>
-                        <p>Your files are processed securely and deleted automatically after conversion</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">🔧</div>
-                        <h3>Multiple Formats</h3>
-                        <p>Support for all major audio and video formats with timestamp options</p>
-                    </div>
-                </div>
+        <!-- Секции технологий -->
+        <section id="ai" class="tech-section">
+          <div class="section-header">
+            <div class="section-indicator">
+              <span>01</span>
+              <div class="indicator-line"></div>
             </div>
+            <h2 class="section-title">Штучний інтелект</h2>
+          </div>
+          
+          <div class="tech-grid">
+            <div class="tech-content">
+              <div class="content-block">
+                <p>
+                  Штучний інтелект (ШІ) дозволяє машинам <strong>розуміти, аналізувати і навчатися</strong>.  
+                  Сьогодні він допомагає лікарям ставити точні діагнози, створює картини, музику, тексти і навіть програмний код.
+                </p>
+                <p>
+                  У майбутньому ШІ стане частиною кожного пристрою, допомагаючи людям приймати рішення швидше, точніше і розумніше, ніж будь-коли раніше.
+                </p>
+              </div>
+              
+              <a href="https://uk.wikipedia.org/wiki/Штучний_інтелект" target="_blank" class="luxury-button">
+                <span>Детальніше →</span>
+              </a>
+            </div>
+            
+            <div class="tech-visual">
+              <div class="image-frame">
+                <img src="images/ai.png" alt="AI" class="tech-image">
+                <div class="frame-overlay"></div>
+              </div>
+            </div>
+          </div>
         </section>
+
+        <section id="holo" class="tech-section">
+          <div class="section-header">
+            <div class="section-indicator">
+              <span>02</span>
+              <div class="indicator-line"></div>
+            </div>
+            <h2 class="section-title">Голографічні інтерфейси</h2>
+          </div>
+          
+          <div class="tech-grid reversed">
+            <div class="tech-visual">
+              <div class="image-frame">
+                <img src="images/holography.png" alt="Holography" class="tech-image">
+                <div class="frame-overlay"></div>
+              </div>
+            </div>
+            
+            <div class="tech-content">
+              <div class="content-block">
+                <p>
+                  Голографічні інтерфейси відкривають шлях до <strong>нового рівня взаємодії</strong> з комп'ютером — без екранів і клавіатур.  
+                  Усе навколо користувача перетворюється на інтерактивний простір, який реагує на рух, голос і дотик.
+                </p>
+                <p>
+                  Освіта, медицина, архітектура — усі ці сфери отримають користь від голографії, де дані стають об'ємними, а взаємодія — природною.
+                </p>
+              </div>
+              
+              <a href="https://uk.wikipedia.org/wiki/Голографія" target="_blank" class="luxury-button">
+                <span>Детальніше →</span>
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <section id="bio" class="tech-section">
+          <div class="section-header">
+            <div class="section-indicator">
+              <span>03</span>
+              <div class="indicator-line"></div>
+            </div>
+            <h2 class="section-title">Біокомп'ютери</h2>
+          </div>
+          
+          <div class="tech-grid">
+            <div class="tech-content">
+              <div class="content-block">
+                <p>
+                  Біокомп'ютери — це унікальне поєднання <strong>біологічних клітин і електроніки</strong>.  
+                  Вони використовують живі нейрони для обчислень, працюють з мінімальним енергоспоживанням і здатні до самооновлення.
+                </p>
+                <p>
+                  У майбутньому біокомп'ютери можуть стати основою нових технологій — від штучного інтелекту до моделювання мозкової діяльності людини.
+                </p>
+              </div>
+              
+              <a href="https://en.wikipedia.org/wiki/Wetware_computer" target="_blank" class="luxury-button">
+                <span>Детальніше →</span>
+              </a>
+            </div>
+            
+            <div class="tech-visual">
+              <div class="image-frame">
+                <img src="images/biocomputers.png" alt="Biocomputers" class="tech-image">
+                <div class="frame-overlay"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Секция с источниками -->
+        <section class="sources-section">
+          <div class="sources-content">
+            <h2 class="sources-title">Використані джерела</h2>
+            <div class="sources-grid">
+              <div class="source-category">
+                <h3>Наукові джерела</h3>
+                <ul class="sources-list">
+                  <li>
+                    <i class="fas fa-book"></i>
+                    <span>"Штучний інтелект: сучасний стан та перспективи" - IEEE</span>
+                  </li>
+                  <li>
+                    <i class="fas fa-book"></i>
+                    <span>"Голографічні технології у комп'ютингу" - MIT Press</span>
+                  </li>
+                  <li>
+                    <i class="fas fa-book"></i>
+                    <span>"Біокомп'ютери: синтез технології та природи" - Nature</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <div class="source-category">
+                <h3>Онлайн ресурси</h3>
+                <ul class="sources-list">
+                  <li>
+                    <i class="fas fa-globe"></i>
+                    <span>Wikipedia - Штучний інтелект</span>
+                  </li>
+                  <li>
+                    <i class="fas fa-globe"></i>
+                    <span>Wikipedia - Голографія</span>
+                  </li>
+                  <li>
+                    <i class="fas fa-globe"></i>
+                    <span>Wikipedia - Біокомп'ютери</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <div class="source-category">
+                <h3>Дослідницькі центри</h3>
+                <ul class="sources-list">
+                  <li>
+                    <i class="fas fa-university"></i>
+                    <span>MIT Media Lab - Дослідження в галузі ШІ</span>
+                  </li>
+                  <li>
+                    <i class="fas fa-university"></i>
+                    <span>Stanford HCI Group - Інтерфейси майбутнього</span>
+                  </li>
+                  <li>
+                    <i class="fas fa-university"></i>
+                    <span>Harvard Bionics Lab - Біологічні системи</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            
+            <div class="sources-note">
+              <p>
+                <i class="fas fa-info-circle"></i>
+                Вся інформація перевірена та актуалізована станом на 2024 рік. 
+                Джерела постійно оновлюються відповідно до останніх наукових відкриттів.
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
+  </div>
 
-    <!-- Enhanced bottom glow -->
-    <div class="bottom-glow" aria-hidden="true"></div>
-
-    <script src="script.js" defer></script>
+  <script src="script.js"></script>
 </body>
 </html>
-
-
